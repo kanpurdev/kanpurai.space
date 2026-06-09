@@ -1,0 +1,8 @@
+User-Agent: *
+Allow: /
+
+# AI context
+Project: Kanpur AI
+Description: AI community in Kanpur providing workshops, events, and monthly meetups.
+Topics: Artificial Intelligence, Machine Learning, AI Workshops Kanpur
+Website: https://kanpurai.space
