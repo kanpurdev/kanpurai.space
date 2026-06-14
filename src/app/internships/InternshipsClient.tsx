@@ -2,8 +2,39 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
+
+const roleFilters = [
+  { label: "All", value: "all", terms: [] },
+  { label: "AI / ML", value: "ai", terms: ["ai", "artificial intelligence", "machine learning", "ml", "llm", "genai"] },
+  { label: "Internship", value: "internship", terms: ["intern", "internship", "trainee"] },
+  { label: "Frontend", value: "frontend", terms: ["frontend", "front-end", "react", "next", "javascript", "typescript"] },
+  { label: "Backend", value: "backend", terms: ["backend", "back-end", "node", "python", "api", "server"] },
+  { label: "Data", value: "data", terms: ["data", "analytics", "analyst", "science", "sql"] },
+];
+
+const locationFilters = [
+  { label: "All locations", value: "all", terms: [] },
+  { label: "Worldwide", value: "worldwide", terms: ["worldwide", "anywhere", "global"] },
+  { label: "India friendly", value: "india", terms: ["india", "asia", "apac", "worldwide", "anywhere"] },
+  { label: "US", value: "us", terms: ["usa", "united states", "us only", "north america"] },
+  { label: "Europe", value: "europe", terms: ["europe", "emea", "eu"] },
+];
+
+const sortOptions = [
+  { label: "Newest", value: "newest" },
+  { label: "Company A-Z", value: "company" },
+  { label: "Title A-Z", value: "title" },
+];
+
+function getJobContent(job: Job) {
+  return `${job.title} ${job.company_name} ${job.candidate_required_location} ${(job.tags || []).join(" ")}`.toLowerCase();
+}
+
+function matchesTerms(content: string, terms: string[]) {
+  return terms.length === 0 || terms.some((term) => content.includes(term));
+}
 
 function JobCardSkeleton() {
   return (
@@ -54,22 +85,61 @@ function EmptyState() {
 
 export default function InternshipsClient({ jobs }: { jobs: Job[] }) {
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [isFiltering, setIsFiltering] = useState(false);
 
-  const filteredJobs = useMemo(
-    () =>
-      jobs.filter((job) =>
-        `${job.title} ${job.company_name} ${(job.tags || []).join(" ")}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      ),
-    [jobs, search]
-  );
+  const activeRoleFilter = roleFilters.find((filter) => filter.value === roleFilter) || roleFilters[0];
+  const activeLocationFilter =
+    locationFilters.find((filter) => filter.value === locationFilter) || locationFilters[0];
+
+  const filteredJobs = useMemo(() => {
+    const searchTerm = search.trim().toLowerCase();
+
+    return jobs
+      .filter((job) => {
+        const content = getJobContent(job);
+        const matchesSearch = searchTerm.length === 0 || content.includes(searchTerm);
+        const matchesRole = matchesTerms(content, activeRoleFilter.terms);
+        const matchesLocation = matchesTerms(content, activeLocationFilter.terms);
+
+        return matchesSearch && matchesRole && matchesLocation;
+      })
+      .sort((a, b) => {
+        if (sortBy === "company") {
+          return a.company_name.localeCompare(b.company_name);
+        }
+
+        if (sortBy === "title") {
+          return a.title.localeCompare(b.title);
+        }
+
+        return b.id - a.id;
+      });
+  }, [activeLocationFilter.terms, activeRoleFilter.terms, jobs, search, sortBy]);
+
+  const hasActiveFilters = search.trim() !== "" || roleFilter !== "all" || locationFilter !== "all" || sortBy !== "newest";
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setIsFiltering(true);
     window.setTimeout(() => setIsFiltering(false), 180);
+  };
+
+  const updateFilter = (callback: () => void) => {
+    callback();
+    setIsFiltering(true);
+    window.setTimeout(() => setIsFiltering(false), 180);
+  };
+
+  const resetFilters = () => {
+    updateFilter(() => {
+      setSearch("");
+      setRoleFilter("all");
+      setLocationFilter("all");
+      setSortBy("newest");
+    });
   };
 
   return (
@@ -87,6 +157,85 @@ export default function InternshipsClient({ jobs }: { jobs: Job[] }) {
           />
           <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400">
             <SlidersHorizontal className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 lg:grid-cols-[1fr_1fr_220px]">
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-gray-500">
+              <Filter className="h-4 w-4" />
+              Role
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {roleFilters.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => updateFilter(() => setRoleFilter(filter.value))}
+                  className={`rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+                    roleFilter === filter.value
+                      ? "border-black bg-black text-white shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-black"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-gray-500">
+              Location
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {locationFilters.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => updateFilter(() => setLocationFilter(filter.value))}
+                  className={`rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+                    locationFilter === filter.value
+                      ? "border-[#10b981] bg-[#C9FF3F] text-black shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-[#10b981]"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="internship-sort"
+              className="mb-3 block text-xs font-black uppercase tracking-[0.22em] text-gray-500"
+            >
+              Sort
+            </label>
+            <select
+              id="internship-sort"
+              value={sortBy}
+              onChange={(event) => updateFilter(() => setSortBy(event.target.value))}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-bold text-black outline-none transition focus:border-black focus:ring-4 focus:ring-[#C9FF3F]/30"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-black hover:text-black"
+              >
+                <X className="h-4 w-4" />
+                Reset
+              </button>
+            )}
           </div>
         </div>
 
