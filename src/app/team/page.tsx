@@ -23,7 +23,7 @@ const coreTeam = [
   {
     name: "Samarth Mishra",
     role: "Overall Coordinator",
-    image: "https://media.licdn.com/dms/image/v2/D5603AQGQ37MsqaXDuA/profile-displayphoto-scale_400_400/B56ZsL5cZ2K4Ao-/0/1765431167574?e=1775088000&v=beta&t=pjEWDtUnZskuBtLcJarErxXZKwbfYn9FnxUEgMFB1No", // Placeholder
+    image: "https://github.com/iamsamarthmishra.png", // GitHub avatar (stable URL)
     bio: "Full-stack wizard and AI enthusiast. Loves shipping code.",
     socials: {
       twitter: "#",
