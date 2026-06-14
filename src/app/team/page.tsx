@@ -1,11 +1,87 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Github, Linkedin, Twitter, ArrowRight } from "lucide-react";
 import { PeerlistIcon } from "@/components/PeerlistIcon";
 import Image from "next/image";
 import Link from "next/link";
+
+// ── Custom Avatar Fallback ───────────────────────────────────────────────────
+const AVATAR_GRADIENTS = [
+  ["#6366f1", "#8b5cf6"], // indigo → violet
+  ["#10b981", "#06b6d4"], // emerald → cyan
+  ["#f59e0b", "#ef4444"], // amber → red
+  ["#ec4899", "#8b5cf6"], // pink → violet
+  ["#3b82f6", "#06b6d4"], // blue → cyan
+  ["#C9FF3F", "#10b981"], // lime → emerald
+  ["#f97316", "#ef4444"], // orange → red
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function getGradient(name: string): [string, string] {
+  const hash = name
+    .split("")
+    .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
+
+function InitialsAvatar({ name }: { name: string }) {
+  const initials = getInitials(name);
+  const [from, to] = getGradient(name);
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center select-none"
+      style={{
+        background: `linear-gradient(135deg, ${from}, ${to})`,
+      }}
+    >
+      <span
+        className="font-extrabold text-white drop-shadow-sm"
+        style={{ fontSize: "1.25rem", letterSpacing: "0.05em" }}
+      >
+        {initials}
+      </span>
+    </div>
+  );
+}
+
+// Guard: Next.js Image throws "Invalid URL" for "#" or empty strings
+function isValidSrc(src: string): boolean {
+  return (
+    typeof src === "string" &&
+    src.trim() !== "" &&
+    src !== "#" &&
+    (src.startsWith("http") || src.startsWith("/"))
+  );
+}
+
+function MemberAvatar({ src, name }: { src: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+
+  // Immediately show initials if src is "#", empty, or not a real URL
+  // (prevents Next.js from throwing "Failed to construct 'URL': Invalid URL")
+  if (!isValidSrc(src) || failed) return <InitialsAvatar name={name} />;
+
+  return (
+    <Image
+      src={src}
+      alt={name}
+      fill
+      className="object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const coreTeam = [
   {
@@ -23,7 +99,7 @@ const coreTeam = [
   {
     name: "Samarth Mishra",
     role: "Overall Coordinator",
-    image: "https://media.licdn.com/dms/image/v2/D5603AQGQ37MsqaXDuA/profile-displayphoto-scale_400_400/B56ZsL5cZ2K4Ao-/0/1765431167574?e=1775088000&v=beta&t=pjEWDtUnZskuBtLcJarErxXZKwbfYn9FnxUEgMFB1No", // Placeholder
+    image: "https://github.com/iamsamarthmishra.png", // GitHub avatar (stable URL)
     bio: "Full-stack wizard and AI enthusiast. Loves shipping code.",
     socials: {
       twitter: "#",
@@ -79,7 +155,7 @@ const coreTeam = [
   {
     name: "Janvi",
     role: "Core Team",
-    image: "https://github.com/github.png",
+    image: "#",
     bio: "Enthusiastic builder and AI learner.",
     socials: {
       twitter: "#",
@@ -154,12 +230,7 @@ export default function TeamPage() {
                 className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group"
               >
                 <div className="w-24 h-24 rounded-full bg-gray-200 mb-6 overflow-hidden relative mx-auto">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                  />
+                  <MemberAvatar src={member.image} name={member.name} />
                 </div>
                 <div className="text-center">
                   <h3 className="font-space-grotesk text-2xl font-bold mb-1">
