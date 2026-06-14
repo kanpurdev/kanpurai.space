@@ -33,7 +33,7 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-1">
-            {["About", "Events", "Team", "Resources", "Blog"].map(
+            {["About", "Events", "Team", "Resources", "Blog", "Internships"].map(
               (item) => (
                 <Link
                   key={item}
@@ -83,7 +83,7 @@ const Navbar = () => {
             className="fixed top-28 left-4 right-4 z-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl md:hidden"
           >
             <div className="flex flex-col gap-4">
-              {["About", "Events", "Team", "Explore", "Blog"].map(
+              {["About", "Events", "Team", "Explore", "Blog", "Internships"].map(
                 (item) => (
                   <Link
                     key={item}
